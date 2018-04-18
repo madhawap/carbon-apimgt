@@ -276,6 +276,9 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
     public AccessTokenInfo getNewApplicationAccessToken(AccessTokenRequest tokenRequest)
             throws APIManagementException {
 
+        log.debug("m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m-m"
+                + "-m-m-m-m-m-m-m call getNewApplicationAccessToken" );
+
         String newAccessToken;
         long validityPeriod;
         AccessTokenInfo tokenInfo = null;
@@ -301,7 +304,10 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
 
                 HttpClient revokeEPClient = APIUtil.getHttpClient(revokeEndpointPort, revokeEndpointProtocol);
 
+                log.debug("x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x "
+                        +revokeEndpoint + " x-x-x-x-x-x-x " + revokeEndpointPort );
                 HttpPost httpRevokePost = new HttpPost(revokeEndpoint);
+
 
                 // Request parameters.
                 List<NameValuePair> revokeParams = new ArrayList<NameValuePair>(3);
@@ -342,6 +348,8 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
 
             //Generate New Access Token
             HttpClient tokenEPClient = APIUtil.getHttpClient(keyMgtPort, keyMgtProtocol);
+            log.debug("--------------------------------------------------------------------- " +
+                    tokenEndpoint + "-----------------------" + keyMgtPort);
             HttpPost httpTokpost = new HttpPost(tokenEndpoint);
             List<NameValuePair> tokParams = new ArrayList<NameValuePair>(3);
             tokParams.add(new BasicNameValuePair(OAuth.OAUTH_GRANT_TYPE, GRANT_TYPE_VALUE));

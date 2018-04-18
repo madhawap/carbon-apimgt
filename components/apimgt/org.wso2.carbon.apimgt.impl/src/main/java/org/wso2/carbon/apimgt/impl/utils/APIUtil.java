@@ -45,6 +45,7 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.ProxySelectorRoutePlanner;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
@@ -190,9 +191,14 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
@@ -5418,10 +5424,51 @@ public final class APIUtil {
                 registry.register(new Scheme(APIConstants.HTTP_PROTOCOL, 80, PlainSocketFactory.getSocketFactory()));
             }
         }
+
+        final String proxyHost = System.getProperty("http.proxyHost");
+        final String proxyPort = System.getProperty("http.proxyPort");
+        final String nonProxyHostsValue = System.getProperty("http.nonProxyHosts");
+        final ProxySelector proxySelector = new ProxySelector() {
+            @Override
+            public java.util.List<Proxy> select(final URI uri) {
+                final List<Proxy> proxyList = new ArrayList<Proxy>(1);
+
+                final String host = uri.getHost();
+
+                if (host.startsWith("127.0.0.1") || host.startsWith("localhost") || StringUtils.contains
+                        (nonProxyHostsValue, host)) {
+                    proxyList.add(Proxy.NO_PROXY);
+                } else {
+                    proxyList.add(new Proxy(Proxy.Type.HTTP,
+                            new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort))));
+                }
+
+                return proxyList;
+            }
+
+            @Override
+            public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        };
         HttpParams params = new BasicHttpParams();
         ThreadSafeClientConnManager tcm = new ThreadSafeClientConnManager(registry);
-        return new DefaultHttpClient(tcm, params);
 
+
+        DefaultHttpClient client = new DefaultHttpClient(tcm, params);
+
+        ProxySelectorRoutePlanner routePlanner = new ProxySelectorRoutePlanner(registry, proxySelector);
+        client.setRoutePlanner(routePlanner);
+
+
+//        if(proxyHost != null && !proxyHost.isEmpty() && !proxyHost.trim().isEmpty() && proxyPort != null &&
+//                !proxyPort.isEmpty() && !proxyPort.trim().isEmpty() && Pattern.matches("[0-9]+",
+//                proxyPort)){
+//            HttpHost proxy = new HttpHost(proxyHost,Integer.parseInt(proxyPort));
+//            params.setParameter(ConnRoutePNames.DEFAULT_PROXY,proxy);
+//        }
+
+        return client;
     }
 
     /**
